@@ -4,7 +4,9 @@
 import unittest2
 from os.path import join
 from bochk_revised2.cash import getCashFromActivity, getCashFromBalance
-from bochk_revised2.main import getCurrentDirectory, fileToLines
+from bochk_revised2.main import getCurrentDirectory, fileToLines \
+								, getCashFromBalancenActivityFiles
+from utils.iter import firstOf
 
 
 
@@ -34,3 +36,23 @@ class TestAll(unittest2.TestCase):
 		self.assertAlmostEqual(579, d['HKD']['balance'])
 		self.assertAlmostEqual(0, d['EUR']['balance'])
 		self.assertAlmostEqual(456330.61, d['USD']['balance'])
+
+
+
+	def testGetCashFromBalancenActivityFiles(self):
+		activityFile = join(getCurrentDirectory(), 'samples', 'Cash Stt _21042020_activity.xlsx')
+		balanceFile = join(getCurrentDirectory(), 'samples', 'Cash Stt _21042020.xlsx')
+		date, positions = getCashFromBalancenActivityFiles(balanceFile, activityFile)
+		self.assertEqual('2020-04-21', date)
+		positions = list(positions)
+		self.assertEqual(3, len(positions))
+		usd = firstOf(lambda p: p['currency'] == 'USD', positions)
+		self.assertEqual('JIC INTERNATIONAL LIMITED - CLFAMC', usd['portfolio'])
+		self.assertEqual('2020-04-21', usd['date'])
+		self.assertAlmostEqual(207111.65, usd['balance'])
+
+		hkd = firstOf(lambda p: p['currency'] == 'HKD', positions)
+		self.assertAlmostEqual(579, hkd['balance'])
+
+		eur = firstOf(lambda p: p['currency'] == 'EUR', positions)
+		self.assertAlmostEqual(0, eur['balance'])

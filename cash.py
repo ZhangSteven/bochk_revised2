@@ -16,14 +16,9 @@ from toolz.dicttoolz import valmap
 from toolz.itertoolz import groupby as groupbyToolz
 from utils.iter import pop
 from clamc_datafeed.feeder import mergeDictionary
-import logging, re
+import logging
 logger = logging.getLogger(__name__)
 
-
-
-def lognRaise(msg):
-	logger.error(msg)
-	raise ValueError
 
 
 def lognContinue(msg, x):
