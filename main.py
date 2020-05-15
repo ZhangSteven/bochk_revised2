@@ -10,8 +10,9 @@ from bochk_revised2.cash import getCashFromBalance, getCashFromActivity
 from bochk_revised.main import writeHoldingCsv, writeOutputCsv, getCashHeaders
 from clamc_datafeed.feeder import fileToLines, mergeDictionary
 from toolz.functoolz import compose
+from toolz.itertoolz import groupby as groupbyToolz
 from functools import partial, reduce
-from itertools import chain
+from itertools import chain, filterfalse
 from datetime import datetime
 from os.path import join, dirname, abspath
 import logging, re
@@ -85,8 +86,46 @@ def doOutputCash(outputDir, inputFiles):
 			return False
 
 
+	"""
+		[List] t (a list with two file names)
+			=> [Tuple] t (balance file, activity file) or
+						 ('', '') if the input files do not contain just one
+						 balance file and one activity file
+	"""
+	toOrderedGroup = lambda t: \
+		(t[1], t[0]) if isActivityFile(t[0]) and not isActivityFile(t[1]) else \
+		(t[0], t[1]) if isActivityFile(t[1]) and not isActivityFile(t[0]) else \
+		('', '')
 
 
+	"""
+		[String] outputDir, [Tuple] t (balance file, activity file)
+			=> [String] output cash csv
+
+		Side effect: write the cash csv file if successful
+	"""
+	toCashOutputCsv = lambda outputDir, t: \
+		try:
+			return writeCashCsv(outputDir, t[0], t[1])
+		except:
+			return ''
+
+
+	isActivityFile = lambda fn: 'activity' in stripFilePath(fn).lower()
+
+
+	return compose(
+		
+	  , lambda groups: map( lambda t: (t, toCashOutputCsv(outputDir, t))
+						  , groups)
+	  , partial(filterfalse, lambda group: group == ('', ''))
+	  , partial(map, toOrderedGroup)
+	  , partial(filter, lambda group: len(group) == 2)
+	  , lambda d: d.values()
+	  , partial(groupbyToolz, getDateFromFileName)
+	  , lambda _, inputFiles: filter(canGetDateFromFileName, inputFiles)
+	)(outputDir, inputFiles)
+	
 
 
 def doOutputHolding(outputDir, inputFiles):
@@ -206,16 +245,16 @@ getCurrentDirectory = lambda: dirname(abspath(__file__))
 
 	Side effect: write output csv file into the output directory
 """
-writeCashCsv = lambda balanceFile, activityFile, outputDir: compose(
+writeCashCsv = lambda outputDir, balanceFile, activityFile: compose(
 	lambda t: writeOutputCsv( outputDir
 							, balanceFile
 							, '_bochk_' + t[0] + '_cash'
 							, getCashHeaders()
 							, t[1]
 							) 
-  , lambda balanceFile, activityFile, _: \
+  , lambda _, balanceFile, activityFile: \
   		getCashFromBalancenActivityFiles(balanceFile, activityFile)
-)(balanceFile, activityFile, outputDir)
+)(outputDir, balanceFile, activityFile)
 
 
 
@@ -226,7 +265,7 @@ if __name__ == '__main__':
 
 	activityFile = join(getCurrentDirectory(), 'samples', 'Cash Stt _21042020_activity.xlsx')
 	balanceFile = join(getCurrentDirectory(), 'samples', 'Cash Stt _21042020.xlsx')
-	print(writeCashCsv(balanceFile, activityFile, ''))
+	print(writeCashCsv('', balanceFile, activityFile))
 
 	# holdingFile = join(getCurrentDirectory(), 'samples', 'Holding _17102019.xlsx')
 	# print(doOutputHolding('', [holdingFile]))
