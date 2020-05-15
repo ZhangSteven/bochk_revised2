@@ -41,11 +41,14 @@ def doOutput(outputDir, inputFiles):
 
 	Side effect: write output csv files to the output directory
 	"""
+	logger.debug('doOutput(): start')
+
 	isHoldingFile = lambda file: 'holding' in stripFilePath(file).lower()
 
 
 	splitCashnHolding = lambda acc, el: \
-		acc[0] + [el] if isHoldingFile(el) else acc[1] + [el]
+		(acc[0] + [el], acc[1]) if isHoldingFile(el) else \
+		(acc[0], acc[1] + [el])
 
 
 	combineResult = lambda successfulHoldingFiles, holdingCsvFiles \
@@ -59,8 +62,7 @@ def doOutput(outputDir, inputFiles):
 		lambda t: combineResult( *doOutputHolding(outputDir, t[0])
 							   , *doOutputCash(outputDir, t[1])
 							   )
-	  , lambda _: reduce(splitCashnHolding, inputFiles, ([], []))
-	  , lambda _1, _2: lognContinue('doOutput(): start', '')
+	  , lambda _, inputFiles: reduce(splitCashnHolding, inputFiles, ([], []))
 	)(outputDir, inputFiles)
 
 
@@ -77,6 +79,8 @@ def doOutputCash(outputDir, inputFiles):
 
 	Assume inputFiles is only cash files (balance or activity files)
 	"""
+	logger.debug('doOutputCash(): start')
+
 	def canGetDateFromFileName(file):
 		try:
 			getDateFromFileName(file)
@@ -144,6 +148,8 @@ def doOutputHolding(outputDir, inputFiles):
 
 	Assume inputFiles is only holding files
 	"""
+	logger.debug('doOutputHolding(): start')
+
 	def toHoldingOutputCsv(outputDir, file):
 		try:
 			return writeHoldingCsv(outputDir, file)
@@ -196,7 +202,7 @@ def getCashFromBalancenActivityFiles(balanceFile, activityFile):
 					 , processFiles(date, balanceFile, activityFile)
 					 )
 	  , lambda _: checkFileDates(balanceFile, activityFile)
-	  , lambda _, _1: lognContinue('getCashFromBalancenActivityFiles(): {0}, {1}'.format(balanceFile, activityFile), '')
+	  , lambda _1, _2: lognContinue('getCashFromBalancenActivityFiles(): {0}, {1}'.format(balanceFile, activityFile), 0)
 	)(balanceFile, activityFile)
 
 
@@ -267,9 +273,19 @@ if __name__ == '__main__':
 	import logging.config
 	logging.config.fileConfig('logging.config', disable_existing_loggers=False)
 
-	activityFile = join(getCurrentDirectory(), 'samples', 'Cash Stt _21042020_activity.xlsx')
-	balanceFile = join(getCurrentDirectory(), 'samples', 'Cash Stt _21042020.xlsx')
-	print(writeCashCsv('', balanceFile, activityFile))
+	file1 = join(getCurrentDirectory(), 'samples', 'Holding _12052020.xlsx')
+	file2 = join(getCurrentDirectory(), 'samples', 'Wrong Holding _07052020.xlsx')
+	file3 = join(getCurrentDirectory(), 'samples', 'Holding _17102019.xlsx')
+	file4 = join(getCurrentDirectory(), 'samples', 'Cash Stt _16042020_activity.xlsx')
+	file5 = join(getCurrentDirectory(), 'samples', 'Cash Stt _21042020.xlsx')
+	file6 = join(getCurrentDirectory(), 'samples', 'Cash Stt _21042020_activity.xlsx')
+	file7 = join(getCurrentDirectory(), 'samples', 'Cash Stt _13052020_activity.xlsx')
+	file8 = join(getCurrentDirectory(), 'samples', 'Cash Stt _13052020.xlsx')
+	file9 = join(getCurrentDirectory(), 'samples', 'Cash Stt _04212020 -Wrong Date.xlsx')
 
-	# holdingFile = join(getCurrentDirectory(), 'samples', 'Holding _17102019.xlsx')
-	# print(doOutputHolding('', [holdingFile]))
+	successfulFiles, outputCsvs = doOutput(
+		join(getCurrentDirectory(), 'samples')
+	  , [file1, file2, file3, file4, file5, file6, file7, file8, file9]
+	)
+	print('\n{0} successful files'.format(len(list(successfulFiles))))
+	print('Output CSVs:\n' + '\n'.join(list(outputCsvs)))
