@@ -5,7 +5,8 @@ import unittest2
 from os.path import join
 from bochk_revised2.cash import getCashFromActivity, getCashFromBalance
 from bochk_revised2.main import getCurrentDirectory, fileToLines, doOutputHolding \
-								, getCashFromBalancenActivityFiles
+								, getCashFromBalancenActivityFiles \
+								, doOutputCash
 from utils.iter import firstOf
 
 
@@ -70,3 +71,17 @@ class TestAll(unittest2.TestCase):
 		)
 		self.assertEqual([file1, file3], successfulFiles)
 		self.assertEqual(2, len(outputCsvs))
+
+
+
+	def testDoOutputCash(self):
+		file1 = join(getCurrentDirectory(), 'samples', 'Cash Stt _16042020_activity.xlsx')
+		file2 = join(getCurrentDirectory(), 'samples', 'Cash Stt _21042020.xlsx')
+		file3 = join(getCurrentDirectory(), 'samples', 'Cash Stt _21042020_activity.xlsx')
+
+		successfulFiles, outputCsvs = doOutputCash(
+			join(getCurrentDirectory(), 'samples')
+		  , [file1, file2, file3]
+		)
+		self.assertEqual([file2, file3], list(successfulFiles))
+		self.assertEqual(1, len(outputCsvs))

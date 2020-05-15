@@ -104,7 +104,7 @@ def doOutputCash(outputDir, inputFiles):
 
 		Side effect: write the cash csv file if successful
 	"""
-	toCashOutputCsv = lambda outputDir, t: \
+	def toCashOutputCsv(outputDir, t):
 		try:
 			return writeCashCsv(outputDir, t[0], t[1])
 		except:
@@ -114,8 +114,12 @@ def doOutputCash(outputDir, inputFiles):
 	isActivityFile = lambda fn: 'activity' in stripFilePath(fn).lower()
 
 
+	accumulate = lambda acc, el: \
+		(chain(acc[0], el[0]), acc[1] + [el[1]])
+
+
 	return compose(
-		
+		lambda groupResults: reduce(accumulate, groupResults, ([], []))
 	  , lambda groups: map( lambda t: (t, toCashOutputCsv(outputDir, t))
 						  , groups)
 	  , partial(filterfalse, lambda group: group == ('', ''))
