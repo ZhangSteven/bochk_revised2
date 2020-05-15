@@ -33,6 +33,10 @@ def lognContinue(msg, x):
 
 def doOutput(outputDir, inputFiles):
 	"""
+	The interface exposed to other modeuls. The function takes a list
+	of input files and an output directory, write output csvs into
+	the output directory.
+
 	[String] outputDir (the directory to write output csvs to)
 	[Iterable] inputFiles
 		=> ( [Iterable] successful input files
@@ -112,6 +116,7 @@ def doOutputCash(outputDir, inputFiles):
 		try:
 			return writeCashCsv(outputDir, t[0], t[1])
 		except:
+			logger.exception('toCashOutputCsv(): ')
 			return ''
 
 
