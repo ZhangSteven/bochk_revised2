@@ -4,7 +4,7 @@
 import unittest2
 from os.path import join
 from bochk_revised2.cash import getCashFromActivity, getCashFromBalance
-from bochk_revised2.main import getCurrentDirectory, fileToLines \
+from bochk_revised2.main import getCurrentDirectory, fileToLines, doOutputHolding \
 								, getCashFromBalancenActivityFiles
 from utils.iter import firstOf
 
@@ -56,3 +56,17 @@ class TestAll(unittest2.TestCase):
 
 		eur = firstOf(lambda p: p['currency'] == 'EUR', positions)
 		self.assertAlmostEqual(0, eur['balance'])
+
+
+
+	def testDoOutputHolding(self):
+		file1 = join(getCurrentDirectory(), 'samples', 'Holding _12052020.xlsx')
+		file2 = join(getCurrentDirectory(), 'samples', 'Wrong Holding _07052020.xlsx')
+		file3 = join(getCurrentDirectory(), 'samples', 'Holding _17102019.xlsx')
+
+		successfulFiles, outputCsvs = doOutputHolding(
+			join(getCurrentDirectory(), 'samples')
+		  , [file1, file2, file3]
+		)
+		self.assertEqual([file1, file3], successfulFiles)
+		self.assertEqual(2, len(outputCsvs))
