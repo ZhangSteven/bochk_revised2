@@ -46,33 +46,35 @@ toCashEntry = lambda date, position: \
 """
 	[String] filename => [String] date (yyyy-mm-dd)
 
-	filename is like: Cash Statement Report 27102020.csv
+	filename is like: C:\\temp\\Cash Statement Report 27102020.csv
 """
 getDateFromFilename = compose(
 	lambda s: datetime.strptime(s, '%d%m%Y').strftime('%Y-%m-%d')
   , lambda s: s.split('.')[0][-8:]
+  , lambda fn: fn.split('\\')[-1]
 )
 
 
 
-def getCashEntries(filename):
-	"""
+"""
 	[String] filename => [List] cash entries to be written to csv file
-	"""
-	getFirst = lambda L: L[0]
-
-	currencyType = lambda el: el['currency']
-
-	return map( getFirst
-		      , groupby( currencyType
-		      		   , map( partial(toCashEntry, getDateFromFilename(filename))
-			  				, filter( lambda c: c['Remark'] == 'Closing balance'
-			  		  				, getPositions(filename)))
-		      		   ).values()
-		      )
+"""
+getCashEntries = lambda filename: \
+	map( lambda L: L[0]
+	   , groupby( lambda el: el['currency']
+				, map( partial(toCashEntry, getDateFromFilename(filename))
+					 , filter( lambda c: c['Remark'] == 'Closing balance'
+							 , getPositions(filename)))
+					 ).values()
+	   )
 
 
 
+"""
+	[String] outputDir, [String] inputFile => [String] output csv file
+
+	Convert input cash statement file to output cash csv file.
+"""
 write60001CashCsv = lambda outputDir, inputFile: writeOutputCsv( 
 	outputDir
   , inputFile
